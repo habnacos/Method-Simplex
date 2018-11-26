@@ -37,34 +37,35 @@ class Matriz():
                 self.var.append('R_'+str(r))
                 self.identidad.append('R_'+str(r))
                 r+=1
-                if self.fo.max:
+                if not self.fo.max:
                     zj.append(Symbol('M') * -1)                                  # Método de la gran M maximizar.
+                    self.fo.coef.append(Symbol('M') * -1)
                 else:
                     zj.append(Symbol('M'))                                       # Método de la gran M minimizar.
+                    self.fo.coef.append(Symbol('M'))
                 if hol[0] == -1:
                     count +=1
                     zj.append(0)  
+                    self.fo.coef.append(0)
                     self.var.append('S_'+str(s))
                     s+=1
                     aux[self.num_var+i+count+1] = -1                             # Matriz identidad.
                 is_M = True
             else:
                 zj.append(0)                                                     # Zj Coeficiente variable de holgura.
+                self.fo.coef.append(0)
                 self.var.append('S_'+str(s))
                 self.identidad.append('S_'+str(s))
                 s+=1
-                self.fo.coef.append(0)
                 aux[self.num_var+i+count+1] = 1
             matriz.append(aux)                                                   # Matriz identidad.
             self.restricciones[i].coef = aux                                     # Coeficientes más holgura.
         if is_M:
-            if self.fo.max:
-                zj = [sum(x) for x in zip(zj, self.Z())]                             # Coeficientes M despejada.
-            else:
-                aux = self.Z()
-                for i in range(len(aux)):
-                    zj[i] -= aux[i]
-            self.fo.coef = zj                                                   # Igualar los coeficientes a la función objetivo.
+            aux = self.Z()
+            for i in range(len(aux)):                             # Coeficientes M despejada.                                              # Igualar los coeficientes a la función objetivo.
+                zj[i] += aux[i]
+                self.fo.coef[i] = 1 * zj[i]
+                print(zj[i], aux[i])
         else:
             for i in range(len(zj)):
                 zj[i] *= -1
@@ -94,7 +95,10 @@ class Matriz():
             for j in range(self.num_res):
                 res = self.restricciones[j]
                 zj[i] += res.coef[i] * self.c_v_var[0][j]               # Zj (sumatoria de Aj * Cj).
-            cj[i] = zj[i] - self.fo.coef[i]                                  # Cj - Zj.
+            if self.fo.max:
+                cj[i] = zj[i] - self.fo.coef[i]                                  # Cj - Zj.
+            else:
+                cj[i] = self.fo.coef[i] - zj[i]                                # Cj - Zj.
         self.zj = cj
         return self.zj
     
@@ -109,10 +113,12 @@ class Matriz():
         print("#######################################################")
 
     def operar(self):
-        print(self.pivote)
         if self.pivote[1] != 0:
             res = self.restricciones[self.pivote[0]]
-            res.operDiv(res.coef[self.pivote[1]])
+            if res.coef[self.pivote[1]] > 0:
+                res.operDiv(res.coef[self.pivote[1]])
+            else:
+                return 'error'
             for i in range (self.num_res):
                 if i != self.pivote[0]:
                     self.restricciones[i].oper(self.pivote[1], res)
@@ -127,13 +133,8 @@ class Matriz():
             print("#######################################################")
             print("#") 
             print("# La solución más óptima es:")
-            if self.is_M:
-                aux = Poly(self.zj[0], Symbol('M'))
-                self.z = aux.coeffs()[1:][0]
-                print("# Z = " + str(aux.coeffs()[1:][0]))
-            else:
-                self.z = self.zj[0]
-                print("# Z = " + str(self.zj[0]))
+            self.z = self.zj[0]
+            print("# Z = " + str(self.zj[0]))
             for i in range(self.num_res):
                 if self.c_v_var[0][i] != 0:
                     print("# " + self.c_v_var[1][i] + " = " + str(self.tabla[i][0]))
@@ -156,6 +157,17 @@ class Matriz():
                         aux = self.zj[i].coeff(Symbol('M'))             # Método de la Gran M.
                 except:
                     pass
+            if pos == 0:
+                for i in range(1, len(self.zj)):
+                    try:
+                        if aux > self.zj[i] and self.zj[i] < 0 and self.fo.max:
+                            pos = i                                         # Obtener posición.
+                            aux = self.zj[i]             # Método de la Gran M.
+                        elif aux < self.zj[i] and self.zj[i] > 0 and not self.fo.max:                        
+                            pos = i                                         # Obtener posición.
+                            aux = self.zj[i]             # Método de la Gran M.
+                    except:
+                        pass
         else:
             for i in range(1, len(self.zj)):                                # Recorre Zj - Cj.
                 if aux > self.zj[i] and self.zj[i] < 0 and self.fo.max:
@@ -188,7 +200,8 @@ class Matriz():
         cj = [0 for i in range(self.num_hol+1)]                       # Arreglo de coefientes.
         for res in self.restricciones:
             if res.getHolgura()[1] == 1:                            # Método de la gran M.
-                for i in range(self.num_hol):
+                for i in range(self.num_hol+1):
+                    print(res.coef[i])
                     if self.fo.max:
                         cj[i] += res.coef[i] * Symbol('M') * -1
                     else:

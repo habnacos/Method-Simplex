@@ -1,6 +1,6 @@
 import re
 from sympy import Rational
-from tkinter import messagebox, ttk
+from tkinter import messagebox, ttk, font
 from tkinter import *
 from FO import FO
 from Restriccion import Restriccion
@@ -11,20 +11,21 @@ class MethodSimplex():
         self.restricciones=[]
         self.__raiz = Tk()
         self.__raiz.title("Method Simplex")
-        self.__frame = Frame(self.__raiz,width="1000", height="600")
+        self.__frame = Frame(self.__raiz,width="1000", height="600", pady=20, padx=100)
         self.vista_1()
         self.__raiz.mainloop()
 
     def vista_1(self):
         self.clear()
-        self.fo = []
-        self.res = []
-        self.igu = []
+        self.__tabla = None
+        self.fo = None
+        self.res = None
+        self.igu = None
         self.__frame.pack()
         self.numVar = StringVar()
         self.numRes = StringVar()
 
-        Label(self.__frame, text="METHOD SIMPLEX").grid(pady=15, columnspan=2)
+        Label(self.__frame, text="METHOD SIMPLEX", font=font.Font(family="Helvetica", size=30, weight="bold")).grid(pady=15, columnspan=2)
 
         Label(self.__frame, text="Ingrese el número de variables:").grid(row=1, column=0)
         Entry(self.__frame, textvariable=self.numVar).grid(row=1, column=1)
@@ -84,7 +85,7 @@ class MethodSimplex():
         
         aux = ""
         for i in range(self.numVar):
-            aux += "X_" + str(i)
+            aux += "X_" + str(i+1)
             if i +1 == self.numVar:
                 aux += " >= 0"
             else:
@@ -107,44 +108,42 @@ class MethodSimplex():
     def vista_3(self):
         self.clear()
 
+        fon = font.Font(family="Helvetica", size=10, weight="bold")
+
         pivote = [self.__tabla.columna_pivote(), self.__tabla.fila_pivote()]
         print(pivote)
 
-        Label(self.__frame, text="METHOD SIMPLEX").grid(pady=15, columnspan=len(self.__tabla.fo.coef)+2, sticky=NSEW)
-        Label(self.__frame, relief=RIDGE, text="Cj").grid(row=2, column=1, sticky=NSEW)
+        Label(self.__frame, font=fon, text="METHOD SIMPLEX").grid(pady=15, columnspan=len(self.__tabla.fo.coef)+2, sticky=NSEW)
+        Label(self.__frame, bg="black").grid(row=2, column=0, sticky=NSEW)
+        Label(self.__frame, font=fon, relief=RIDGE, text="Cj", bg="red").grid(row=2, column=1, sticky=NSEW)
 
-        for i in range(len(self.__tabla.fo.coef)):
-            if i == pivote[0] and pivote[0] != 0:
-                Label(self.__frame, relief=RIDGE, text=str(self.__tabla.fo.coef[i]), bg="blue").grid(row=2, column=i+2, sticky=NSEW)
-            else:
-                Label(self.__frame, relief=RIDGE, text=str(self.__tabla.fo.coef[i])).grid(row=2, column=i+2, sticky=NSEW)
+        for i in range(self.__tabla.num_hol + 1):
+            Label(self.__frame, font=fon, relief=RIDGE, text=str(self.__tabla.fo.coef[i]), bg="red").grid(row=2, column=i+2, sticky=NSEW)
             self.__raiz.update()
         
         for i in range(self.__tabla.num_hol + 3):
-            if i == pivote[0] + 2 and pivote[0] != 0:
-                Label(self.__frame, relief=RIDGE, text=str(self.__tabla.var[i]), bg="blue").grid(row=3, column=i, sticky=NSEW)
-            else:
-                Label(self.__frame, relief=RIDGE, text=str(self.__tabla.var[i])).grid(row=3, column=i, sticky=NSEW)
+            Label(self.__frame, font=fon, relief=RIDGE, text=str(self.__tabla.var[i]), bg="grey").grid(row=3, column=i, sticky=NSEW)
             self.__raiz.update()
 
         for i in range(self.__tabla.num_res):
-            Label(self.__frame, relief=RIDGE, text=str(self.__tabla.c_v_var[0][i])).grid(row=i+4, column=0, sticky=NSEW)
-            Label(self.__frame, relief=RIDGE, text=str(self.__tabla.c_v_var[1][i]), bg="yellow").grid(row=i+4, column=1, sticky=NSEW)
+            Label(self.__frame, font=fon, relief=RIDGE, text=str(self.__tabla.c_v_var[0][i])).grid(row=i+4, column=0, sticky=NSEW)
+            Label(self.__frame, font=fon, relief=RIDGE, text=str(self.__tabla.c_v_var[1][i]), bg="yellow").grid(row=i+4, column=1, sticky=NSEW)
             for j in range(len(self.__tabla.tabla[i])):
                 if j == pivote[0] or i == pivote[1] and pivote[0] != 0:
-                    Label(self.__frame, relief=RIDGE, text=str(self.__tabla.tabla[i][j]), bg="blue").grid(row=i+4, column=j+2, sticky=NSEW)
+                    Label(self.__frame, font=fon, relief=RIDGE, text=str(self.__tabla.tabla[i][j]), bg="blue").grid(row=i+4, column=j+2, sticky=NSEW)
                 else:
-                    Label(self.__frame, relief=RIDGE, text=str(self.__tabla.tabla[i][j])).grid(row=i+4, column=j+2, sticky=NSEW)
+                    Label(self.__frame, font=fon, relief=RIDGE, text=str(self.__tabla.tabla[i][j])).grid(row=i+4, column=j+2, sticky=NSEW)
                 self.__raiz.update()
         
-        Label(self.__frame, relief=RIDGE, text="Zj").grid(row=i+5, column=1, sticky=NSEW)
+        Label(self.__frame, bg="black").grid(row=i+5, column=0, sticky=NSEW)
+        Label(self.__frame, font=fon, relief=RIDGE, text="Zj", bg="green").grid(row=i+5, column=1, sticky=NSEW)
         for j in range(len(self.__tabla.zj)):
             if pivote[0] == 0 and j == 0:
-                Label(self.__frame, relief=RIDGE, text=str(self.__tabla.zj[j]), bg="blue").grid(row=i+5, column=j+2, sticky=NSEW)
+                Label(self.__frame, font=fon, relief=RIDGE, text=str(self.__tabla.zj[j]), bg="blue").grid(row=i+5, column=j+2, sticky=NSEW)
             elif j == pivote[0]:
-                Label(self.__frame, relief=RIDGE, text=str(self.__tabla.zj[j]), bg="blue").grid(row=i+5, column=j+2, sticky=NSEW)
+                Label(self.__frame, font=fon, relief=RIDGE, text=str(self.__tabla.zj[j]), bg="blue").grid(row=i+5, column=j+2, sticky=NSEW)
             else:
-                Label(self.__frame, relief=RIDGE, text=str(self.__tabla.zj[j])).grid(row=i+5, column=j+2, sticky=NSEW)
+                Label(self.__frame, font=fon, relief=RIDGE, text=str(self.__tabla.zj[j])).grid(row=i+5, column=j+2, sticky=NSEW)
             self.__raiz.update()
 
         colum = int((len(self.__tabla.fo.coef)+3)/2)
@@ -173,6 +172,8 @@ class MethodSimplex():
             if not re.search(expresion, self.igu[aux][1].get()):
                sw = False 
                break
+
+        self.restricciones = []
         if sw:
             fo = []
 
@@ -190,6 +191,9 @@ class MethodSimplex():
             else:
                 sw=False
 
+            self.fo = None
+            self.res = None
+            self.igu = None
             self.__FO = FO(fo, sw)
             self.__tabla = Matriz(self.__FO, self.restricciones)
             self.vista_3()
@@ -197,14 +201,17 @@ class MethodSimplex():
             messagebox.showinfo("ERROR", "Hay algún número no valido.")
 
     def operar(self):
-        if not self.__tabla.operar():
+        sw = self.__tabla.operar()
+        if not sw:
             self.vista_3()
-        else:
+        elif sw:
             aux = "\nZ = "+str(self.__tabla.z)
             for i in range(self.__tabla.num_res):
-                if 'X_' in self.__tabla.c_v_var[1][i]:
+                if 'x_' in self.__tabla.c_v_var[1][i]:
                     aux += "\n" + self.__tabla.c_v_var[1][i] + " = " + str(self.__tabla.tabla[i][0])
             messagebox.showinfo("Solución", "La solución más óptima es:" + aux)
+        else:
+            messagebox.showinfo("Solución", "Este problema no tiene solución.")
 
     def btnOk(self):
         if re.search(r'^[0-9]+$', self.numVar.get()) and re.search(r'^[0-9]+$', self.numRes.get()):
@@ -216,11 +223,7 @@ class MethodSimplex():
     def clear(self):
         for a in self.__frame.grid_slaves():
             a.destroy()
-
-    def method_simplex(self):
-        fo = Entry(self.__frame)
-        fo.place()
-        self.__frame.update()
-        self.__raiz.mainloop()
+        for a in self.__raiz.grid_slaves():
+            a.destroy()
 
 a = MethodSimplex()
